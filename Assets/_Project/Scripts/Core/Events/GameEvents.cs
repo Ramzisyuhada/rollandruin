@@ -98,6 +98,13 @@ namespace RollAndRuin.Core
         public GoldChanged(Actor actor, int delta, string source) { Actor = actor; Delta = delta; Source = source; }
     }
 
+    /// <summary>Dadu Kembar keluar sama dengan lemparan sebelumnya: rival dilewati giliran ini.</summary>
+    public sealed class ExtraTurnGranted
+    {
+        public Actor Actor { get; }
+        public ExtraTurnGranted(Actor actor) { Actor = actor; }
+    }
+
     public sealed class FloorStarted
     {
         public int FloorIndex { get; }

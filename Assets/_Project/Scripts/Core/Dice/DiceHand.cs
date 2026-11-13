@@ -37,7 +37,8 @@ namespace RollAndRuin.Core
             index >= 0 && index < _dice.Count && !HasUsedThisTurn && _dice[index].IsReady;
 
         /// <summary>Lempar dadu di indeks tertentu, lalu dadu itu masuk cooldown.</summary>
-        public DiceFace Use(int index, RunRng rng)
+        /// <param name="chosenValue">Wajib untuk Dadu Kompas: angka yang dipilih pemain.</param>
+        public DiceFace Use(int index, RunRng rng, int? chosenValue = null)
         {
             if (index < 0 || index >= _dice.Count)
                 throw new ArgumentOutOfRangeException(nameof(index));
@@ -47,7 +48,17 @@ namespace RollAndRuin.Core
                 throw new InvalidOperationException($"Dadu '{_dice[index].Id}' masih cooldown.");
 
             var die = _dice[index];
-            var face = die.Roll(rng);
+            DiceFace face;
+            if (die.Special == DieSpecial.Compass)
+            {
+                if (!chosenValue.HasValue)
+                    throw new ArgumentException("Dadu Kompas butuh angka pilihan.", nameof(chosenValue));
+                face = die.Choose(chosenValue.Value);
+            }
+            else
+            {
+                face = die.Roll(rng);
+            }
             die.StartCooldown();
             UsedIndexThisTurn = index;
             return face;

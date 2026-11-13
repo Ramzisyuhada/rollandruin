@@ -21,8 +21,28 @@ namespace RollAndRuin.Core
 
         public bool IsReady => CurrentCooldown == 0;
 
-        public DiceModel(string id, IEnumerable<DiceFace> faces, int cooldownTurns = 1)
+        /// <summary>Kemampuan khusus dadu (Kompas, Kembar).</summary>
+        public DieSpecial Special { get; }
+
+        /// <summary>Rentang angka yang boleh dipilih pemain untuk Dadu Kompas.</summary>
+        public int CompassMin { get; }
+        public int CompassMax { get; }
+
+        public DiceModel(string id, IEnumerable<DiceFace> faces, int cooldownTurns = 1,
+            DieSpecial special = DieSpecial.None)
+            : this(id, faces, cooldownTurns, special, 1, 3)
         {
+        }
+
+        public DiceModel(string id, IEnumerable<DiceFace> faces, int cooldownTurns, DieSpecial special,
+            int compassMin, int compassMax)
+        {
+            if (special == DieSpecial.Compass && (compassMin < 0 || compassMax < compassMin))
+                throw new ArgumentOutOfRangeException(nameof(compassMax), "Rentang Kompas tidak valid.");
+            Special = special;
+            CompassMin = compassMin;
+            CompassMax = compassMax;
+
             if (string.IsNullOrEmpty(id))
                 throw new ArgumentException("Id dadu tidak boleh kosong.", nameof(id));
             if (faces == null)
@@ -43,6 +63,21 @@ namespace RollAndRuin.Core
         {
             if (rng == null) throw new ArgumentNullException(nameof(rng));
             return _faces[rng.Next(0, _faces.Length)];
+        }
+
+        /// <summary>
+        /// Dadu Kompas: pemain memilih angkanya sendiri. Sisi yang paling cocok dipakai
+        /// (supaya efek sisi tetap berlaku); kalau tidak ada, dibuat sisi baru dengan angka itu.
+        /// </summary>
+        public DiceFace Choose(int value)
+        {
+            if (Special != DieSpecial.Compass)
+                throw new InvalidOperationException($"Dadu '{Id}' bukan Dadu Kompas.");
+            if (value < CompassMin || value > CompassMax)
+                throw new ArgumentOutOfRangeException(nameof(value), $"Kompas hanya {CompassMin}–{CompassMax}.");
+            foreach (var face in _faces)
+                if (face.Value == value) return face;
+            return new DiceFace(value);
         }
 
         public void StartCooldown() => CurrentCooldown = CooldownTurns;

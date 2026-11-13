@@ -48,7 +48,8 @@ namespace RollAndRuin.Core
             _started && Phase == TurnPhase.ChooseDice && Player.Hand.CanUse(index);
 
         /// <summary>Pemain memilih dadu: lempar, gerak, resolusi petak, lalu akhir giliran.</summary>
-        public MoveResult ChooseDie(int index)
+        /// <param name="chosenValue">Angka pilihan untuk Dadu Kompas.</param>
+        public MoveResult ChooseDie(int index, int? chosenValue = null)
         {
             if (!_started) throw new InvalidOperationException("Panggil Start() dulu.");
             if (Phase != TurnPhase.ChooseDice)
@@ -56,8 +57,9 @@ namespace RollAndRuin.Core
             if (!Player.Hand.CanUse(index))
                 throw new InvalidOperationException($"Dadu {index} tidak bisa dipakai.");
 
-            int value = RollDie(Player, index);
-            var move = MovePawn(Player, value);
+            var roll = RollDie(Player, index, chosenValue);
+            var move = MovePawn(Player, roll.Value);
+            ApplyFaceEffect(Player, roll.Face, ref move);
 
             if (move.Final == Board.BossDoorTile)
             {
@@ -66,19 +68,49 @@ namespace RollAndRuin.Core
                 return move;
             }
 
+            if (roll.ExtraTurn) Events.Publish(new ExtraTurnGranted(Player));
             EndTurn();
             return move;
         }
 
-        /// <summary>Lempar dadu dan jalankan hook DieRolled. Mengembalikan jumlah langkah.</summary>
-        private int RollDie(Actor actor, int index)
+        private readonly struct RollOutcome
+        {
+            public readonly int Value;
+            public readonly DiceFace Face;
+            public readonly bool ExtraTurn;
+            public RollOutcome(int value, DiceFace face, bool extraTurn) { Value = value; Face = face; ExtraTurn = extraTurn; }
+        }
+
+        /// <summary>Lempar dadu dan jalankan hook DieRolled.</summary>
+        private RollOutcome RollDie(Actor actor, int index, int? chosenValue)
         {
             var die = actor.Hand.Dice[index];
-            var face = actor.Hand.Use(index, State.Rng);
+            var face = actor.Hand.Use(index, State.Rng, chosenValue);
             var rolled = Events.Publish(new DieRolled(actor, die, face));
             int value = Math.Max(0, rolled.Value);
+
+            bool extraTurn = die.Special == DieSpecial.Twin && actor.LastRollValue == value;
             actor.LastRollValue = value;
-            return value;
+            return new RollOutcome(value, face, extraTurn);
+        }
+
+        private void ApplyFaceEffect(Actor actor, DiceFace face, ref MoveResult move)
+        {
+            if (!face.HasEffect) return;
+
+            if (FaceEffects.TryGetGold(face.EffectId, out int gold))
+            {
+                GiveGold(actor, gold, "face");
+            }
+            else if (face.EffectId == FaceEffects.NearestLadder && move.Final != Board.BossDoorTile)
+            {
+                Jump nearest = null;
+                foreach (var jump in Board.Jumps)
+                    if (jump.IsLadder && jump.From > actor.Position && (nearest == null || jump.From < nearest.From))
+                        nearest = jump;
+                if (nearest != null)
+                    move = MovePawn(actor, nearest.From - actor.Position);
+            }
         }
 
         /// <summary>Gerakkan pion, termasuk ular dan tangga.</summary>
