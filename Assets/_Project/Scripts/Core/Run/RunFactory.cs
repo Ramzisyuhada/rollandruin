@@ -6,7 +6,8 @@ namespace RollAndRuin.Core
         public const int PlayerMaxHp = 25;
         public const int RivalMaxHp = 10;
 
-        public static TurnStateMachine NewRun(int seed, IBoardProvider provider = null, bool withRival = true)
+        public static TurnStateMachine NewRun(int seed, IBoardProvider provider = null, bool withRival = true,
+            MetaProgress meta = null)
         {
             provider = provider ?? new BoardGenerator();
 
@@ -16,6 +17,9 @@ namespace RollAndRuin.Core
             var player = new Actor(Actor.PlayerId, DiceFactory.CreateStartingHand(), PlayerMaxHp);
             var state = new RunState(seed, player, board);
             state.Rng.State = rng.State;
+
+            // Pool relic/dadu dibatasi ke yang sudah di-unlock (F-11).
+            meta?.ApplyTo(state);
 
             if (withRival)
             {

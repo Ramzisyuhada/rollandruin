@@ -27,9 +27,10 @@ namespace RollAndRuin.App
         [Header("Run")]
         [Tooltip("0 = seed acak tiap run.")]
         [SerializeField] private int seed;
-        [SerializeField] private int playerMaxHp = 20;
 
         private TurnStateMachine _machine;
+        private MetaProgress _meta = new MetaProgress();
+        private int _sisikEarned;
         private int _selected = -1;
         private bool _floorShown;
 
@@ -52,6 +53,7 @@ namespace RollAndRuin.App
             animations.Idle += OnAnimationsIdle;
             boardView.IsHidden = IsTileHidden;
             boardView.IsMarked = t => _machine != null && _machine.State.ArmedTraps.Contains(t);
+            _meta = SaveService.LoadMeta();
 
             // FR-12: tawarkan melanjutkan run yang tersimpan.
             var saved = SaveService.HasRun ? SaveService.LoadRun() : null;
@@ -90,7 +92,7 @@ namespace RollAndRuin.App
         private TurnStateMachine CreateMachine()
         {
             int runSeed = seed != 0 ? seed : Environment.TickCount;
-            return RunFactory.NewRun(runSeed);
+            return RunFactory.NewRun(runSeed, meta: _meta);
         }
 
         // ── Save otomatis (FR-11) ────────────────────────────────────────────
@@ -258,6 +260,9 @@ namespace RollAndRuin.App
             events.Subscribe<RunEnded>(e =>
             {
                 SaveService.DeleteRun();
+                // FR-13: Sisik dicatat permanen, menang atau kalah.
+                _sisikEarned = _meta.RecordRun(_machine.State);
+                SaveService.SaveMeta(_meta);
                 animations.Enqueue(() => ShowRunEnded(e));
             });
             // Save tiap awal giliran pemain: state Core sudah konsisten walau animasi belum selesai.
@@ -470,8 +475,42 @@ namespace RollAndRuin.App
             string title = e.Result == RunResult.Won ? "Menara ditaklukkan!" : "Run berakhir";
             var stats = _machine.State.Stats;
             string body = $"Penyebab: {e.Cause}\nLantai {_machine.State.FloorIndex + 1} · giliran {_machine.State.TurnNumber}\n" +
-                          $"Musuh {stats.EnemiesDefeated} · ular {stats.SnakesSlain} · boss {stats.BossesDefeated}";
-            choices.Show(title, body, new ChoiceOption[] { "Main lagi" }, _ => Restart());
+                          $"Musuh {stats.EnemiesDefeated} · ular {stats.SnakesSlain} · boss {stats.BossesDefeated}\n\n" +
+                          $"Sisik +{_sisikEarned} (total {_meta.Sisik})";
+            choices.Show(title, body, new ChoiceOption[] { "Main lagi", "Toko Sisik" }, choice =>
+            {
+                if (choice == 0) Restart();
+                else ShowSisikShop(() => ShowRunEnded(e));
+            });
+        }
+
+        // ── Meta progression (F-11) ──────────────────────────────────────────
+
+        private void ShowSisikShop(Action back)
+        {
+            var offers = new List<UnlockOffer>();
+            foreach (var offer in MetaProgress.Catalog)
+                if (!_meta.IsUnlocked(offer)) offers.Add(offer);
+
+            var options = offers.ConvertAll(o => new ChoiceOption($"{o.Name} — {o.Cost} Sisik", _meta.CanUnlock(o)));
+            options.Add("Kembali");
+            string body = offers.Count == 0
+                ? "Semua dadu dan relic sudah terbuka!"
+                : $"Sisik kamu: {_meta.Sisik}. Yang dibuka akan muncul di toko, chest, dan hadiah run berikutnya.";
+
+            choices.Show("Toko Sisik", body, options, choice =>
+            {
+                if (choice >= offers.Count)
+                {
+                    back();
+                    return;
+                }
+                var offer = offers[choice];
+                _meta.Unlock(offer);
+                SaveService.SaveMeta(_meta);
+                hud.ShowMessage($"Terbuka: {offer.Name}. {offer.Description}");
+                ShowSisikShop(back);
+            });
         }
 
         private static void Restart() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
