@@ -1,0 +1,22 @@
+{
+    "name": "RollAndRuin.Editor",
+    "rootNamespace": "RollAndRuin.EditorTools",
+    "references": [
+        "RollAndRuin.Core",
+        "RollAndRuin.View",
+        "RollAndRuin.App",
+        "UnityEngine.UI",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
