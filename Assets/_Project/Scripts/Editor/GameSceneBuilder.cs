@@ -167,8 +167,19 @@ namespace RollAndRuin.EditorTools
         /// </summary>
         private static void CreateGlobalLight(Transform parent)
         {
-            var type = Type.GetType("UnityEngine.Rendering.Universal.Light2D, Unity.RenderPipelines.Universal.Runtime");
-            if (type == null) return;
+            // Di URP 17 Light2D ada di assembly "Unity.RenderPipelines.Universal.2D.Runtime";
+            // cari di semua assembly supaya tidak bergantung pada nama assembly.
+            Type type = null;
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                type = assembly.GetType("UnityEngine.Rendering.Universal.Light2D");
+                if (type != null) break;
+            }
+            if (type == null)
+            {
+                Debug.LogWarning("[Roll & Ruin] Light2D tidak ditemukan; tambahkan Global Light 2D manual kalau sprite gelap.");
+                return;
+            }
             var go = new GameObject("Global Light 2D");
             go.transform.SetParent(parent, false);
             var light = go.AddComponent(type);
