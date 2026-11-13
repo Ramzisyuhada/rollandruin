@@ -12,8 +12,31 @@ namespace RollAndRuin.App
     public static class SaveService
     {
         private const string RunFile = "run.json";
+        private const string MetaFile = "meta.json";
 
         private static string PathOf(string file) => Path.Combine(Application.persistentDataPath, file);
+
+        /// <summary>Muat progres permanen (Sisik, unlock). File rusak = mulai dari awal, tanpa crash.</summary>
+        public static MetaProgress LoadMeta()
+        {
+            string path = PathOf(MetaFile);
+            if (!File.Exists(path)) return new MetaProgress();
+            try
+            {
+                return MetaProgress.FromSave(JsonUtility.FromJson<MetaSave>(File.ReadAllText(path)));
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[Roll & Ruin] Save meta rusak, mulai baru: {e.Message}");
+                return new MetaProgress();
+            }
+        }
+
+        public static void SaveMeta(MetaProgress meta)
+        {
+            if (meta == null) return;
+            WriteAtomic(PathOf(MetaFile), JsonUtility.ToJson(meta.ToSave()));
+        }
 
         public static bool HasRun => File.Exists(PathOf(RunFile));
 
