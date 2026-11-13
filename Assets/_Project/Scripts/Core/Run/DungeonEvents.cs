@@ -12,7 +12,7 @@ namespace RollAndRuin.Core
         public DecisionOption[] Options { get; }
 
         /// <summary>Jalankan pilihan; panggil onDone setelah selesai (boleh tertunda, misalnya karena gerak).</summary>
-        internal Action<TurnStateMachine, int, Action> Resolve { get; }
+        public Action<TurnStateMachine, int, Action> Resolve { get; }
 
         internal DungeonEvent(string id, string title, string body, DecisionOption[] options,
             Action<TurnStateMachine, int, Action> resolve)
