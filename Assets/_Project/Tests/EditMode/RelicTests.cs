@@ -50,6 +50,7 @@ namespace RollAndRuin.Core.Tests
             var board = new BoardModel(30, new[] { new Jump(2, 1, JumpKind.Snake) });
             var machine = Create(board, FixedHand(2), "sisik_ular");
             machine.ChooseDie(0);
+            machine.Decide(1); // turun
             Assert.AreEqual(5, machine.Player.Gold);
         }
 

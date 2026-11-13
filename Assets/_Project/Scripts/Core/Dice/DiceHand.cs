@@ -76,6 +76,13 @@ namespace RollAndRuin.Core
             EnsureAtLeastOneReady();
         }
 
+        /// <summary>Semua dadu siap dan giliran baru (dipakai saat pindah lantai).</summary>
+        public void ResetAll()
+        {
+            foreach (var die in _dice) die.ResetCooldown();
+            UsedIndexThisTurn = -1;
+        }
+
         public void Add(DiceModel die)
         {
             if (die == null) throw new ArgumentNullException(nameof(die));
