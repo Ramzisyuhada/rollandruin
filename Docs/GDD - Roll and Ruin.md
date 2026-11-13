@@ -2,7 +2,7 @@
 
 *Nama kerja: **Roll & Ruin**. Status: draft v0.2 (tema dungeon fantasi, rival AI masuk MVP), buat game portofolio di Play Store.*
 
-*Progres (13 Nov 2026): Minggu 1 roadmap. Project Unity, struktur folder, dan sprite pack v0.1 (lihat `Tools/ArtGen`) sudah ada; kode gameplay belum. Detail di PRD §17.*
+*Progres (13 Nov 2026): M1–M4 selesai di sisi kode (212 test lulus); tinggal pasang scene dan playtest. Detail dan keputusan desain baru (HP awal 25, +1 damage pemain di duel, jebakan tersembunyi, 15 relic) ada di PRD §17.*
 
 ## 1. Ringkasan
 

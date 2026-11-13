@@ -228,52 +228,61 @@ Di sisi pemain, ular tangga adalah game yang semua orang kenal tapi murni untung
 
 ## 17. Status progres
 
-*Update terakhir: 13 November 2026. Dicek dari isi repo dan git history (commit `b5ab658`, branch aktif `feature/run-rng-dice-model`).*
+*Update terakhir: 13 November 2026. Dicek dari isi repo, git history, dan hasil test (`main` = `70438b2`).*
 
-**Posisi di jadwal:** awal M1 (minggu 1). Fondasi project dan aset art sudah ada; belum ada kode gameplay yang ter-commit.
+**Posisi di jadwal:** M1–M4 selesai di sisi kode. Semua logika Core untuk fitur P0 (kecuali audio dan polish) sudah ada dan teruji. Yang tersisa sebelum M5: memasang scene di Unity Editor dan playtest di HP.
 
 ### Sudah selesai
 
-| Area | Detail |
-| --- | --- |
-| Project Unity | Unity 6000.6.5f1, URP 2D (renderer 2D + profil Mobile/PC), Input System, Test Framework, 2D Pixel Perfect, Tilemap, Sprite |
-| Repo | Git + `.gitignore` Unity, remote `origin` ke GitHub, branch `main` + `feature/run-rng-dice-model` |
-| Struktur folder | `Assets/_Project/` dengan `Scripts/{App,Core,Data,View,Editor}`, sub-folder Core sesuai GDD §7 (Board, Combat, Dice, Events, Relics, Rival, Run, Save, Turn), `Data/`, `Prefabs/`, `Audio/`, `Tests/{EditMode,PlayMode}` |
-| Pipeline art | `Tools/ArtGen/gen_sprites.py` + `gen_extras.py`: generator sprite pixel art 16x16 yang bisa dijalankan ulang, plus README import ke Unity |
-| Sprite pack v0.1 | Petak (4 lantai, dinding, rim highlight/bahaya/rival), dadu 5 warna × sisi 0–6, pion pemain & rival, ular hijau/emas/beracun (head/body/tail), tangga batu/tali/tali lapuk + Lift Kurcaci, ikon petak (chest, jebakan, api unggun, toko, event, kutukan, obor), 4 musuh, 7 relic, UI (koin, HP, Sisik, panel & tombol 9-slice) |
-| Extras art | Portrait 3 boss + Varga (biasa & berbingkai), app icon 512/192 + adaptive icon Android, 28 animasi frame-by-frame dengan preview GIF |
-| Player settings | Min SDK API 26 (sesuai §9), versi 0.1.0, orientasi portrait |
-| Asmdef | `RollAndRuin.Core` (`noEngineReferences`) dan `RollAndRuin.Core.Tests` (EditMode, NUnit) |
-| `RunRng` | RNG deterministik SplitMix64, state `ulong` bisa disimpan/dipulihkan (siap untuk FR-11). Menggantikan rencana `System.Random` di GDD §7 |
-| Dadu (Core) | `DiceFace`, `DiceModel` (roll, cooldown, ganti sisi), `DiceHand` (1 dadu per giliran, cooldown, jaminan minimal 1 dadu siap/FR-06), `DiceFactory` (Biasa, Aman, Nekat, Genap; tangan awal 3 Dadu Biasa) |
-| Papan (Core) | `TileType`, `Jump`/`JumpKind` (ular & tangga + varian GDD), `BoardModel` (30 petak, validasi FR-03), `MoveResolver` (gerak + FR-07, hasil lengkap untuk animasi), `BoardPresets.CreateTestFloor()` (papan statis M1 dengan toko & api unggun, FR-04) |
-| Unit test | 76 test EditMode (RunRng, DiceModel, DiceHand, Jump, BoardModel, MoveResolver), semua lulus |
+| Milestone | Fitur | Detail |
+| --- | --- | --- |
+| Setup | Project & art | Unity 6000.6.5f1, URP 2D, Input System, Test Framework; sprite pack v0.1 + 28 animasi + app icon; import sprite otomatis (16 PPU, point filter, 9-slice) |
+| M1 | F-01, F-02 | `RunRng` (SplitMix64, state bisa disimpan), 10 dadu termasuk Kompas (pilih angka) dan Kembar (giliran ekstra), efek sisi (gold, lompat ke tangga), tangan 3 dadu + cooldown + FR-06 |
+| M1 | Papan & giliran | `BoardModel` (FR-03), `MoveResolver` (FR-07), `TurnStateMachine` (FR-05) berbasis continuation, `GameEventBus` dengan hook event |
+| M1 | View | `BoardView` (grid zig-zag, ular/tangga tiled, preview petak tujuan), `PawnView`, `AnimationQueue`, `HudView`, `DiceHandView`, `ChoicePanelView`, `BoardCameraFitter`, menu Editor **Roll & Ruin → Build Game Scene** |
+| M2 | F-08 | 15 relic lewat hook (7 dari GDD + 8 tambahan), state per relic ikut save |
+| M2 | F-03, F-05 | Pilihan lawan/turun saat kena ular, Ular Emas/Berbisa, Tangga Tali Lapuk, Lift Kurcaci (bayar gold); duel dadu dengan telegraph dadu musuh, 4 monster |
+| M2 | F-06 | Raja Kobra (gigitan tiap 2 ronde), Naga Tangga (curi dadu terkuat), Ouroboros (pulih saat pemain kalah lemparan); hadiah 1 dari 3 lalu lantai berikutnya |
+| M3 | F-09 | `BoardGenerator` + `BoardValidator` (500 simulasi, 100% selesai, rata-rata 6–14 giliran). 100 seed per lantai: rata-rata 9,1 / 10,0 / 11,0 giliran, semua lolos di percobaan pertama. Menu Editor **Roll & Ruin → Validator Report** |
+| M3 | F-07 | `RivalBrain` (skor heuristik + bobot kepribadian + noise), 3 kepribadian, aturan papan sama (FR-10), rival duluan = kutukan + hadiah berkurang / kalah di lantai 3 (FR-09), duel di petak yang sama, sabotase (pasang jebakan, pindah ular) |
+| M4 | F-04 | Toko (relic, dadu, asah sisi, ramuan, item sabotase), chest, 6 event naratif, kutukan, api unggun, jebakan tersembunyi (terlihat setelah dilewati / dengan Peta Kusam) |
+| M4 | F-10 | Save JSON tiap awal giliran + saat app di-pause, tulis atomik, tawaran "Lanjutkan run?" (FR-11, FR-12) |
+| M4 | F-11 | Sisik tiap run (FR-13), unlock 6 dadu + 8 relic lewat Toko Sisik di layar akhir run |
+| Kualitas | Test | **212 test EditMode lulus** (dijalankan juga di luar Unity dengan .NET). Semua script View/App/Editor ter-compile terhadap DLL Unity 6000.6.5 |
+
+### Keputusan desain selama implementasi
+
+- **RNG:** SplitMix64 sendiri, bukan `System.Random`, supaya state bisa disimpan (GDD §7 sudah diupdate).
+- **Duel:** pemain dapat +1 damage tiap menang lemparan, dan HP awal 25. Tanpa ini, duel boss terlalu simetris (simulasi 300 run: bot sederhana menang 1%). Setelah semua fitur M4 masuk, bot sederhana menang **25%**. Kalah paling sering di Naga Tangga (19%), Ouroboros (14%), dan karena rival (17%).
+- **Jebakan tersembunyi:** supaya relic Peta Kusam ("lihat isi 5 petak di depan") punya arti, jebakan baru terlihat setelah dilewati.
+- **Rival duluan di lantai 1–2:** hadiah boss jadi 2 pilihan (dari 3) + kutukan acak. Lantai 3 tetap langsung kalah (pertanyaan terbuka §16 belum diputuskan).
+- **Save hanya di awal giliran:** kalau app di-kill di tengah giliran, pemain mengulang giliran itu (sesuai §9).
+- **Tangan awal:** 3 Dadu Biasa; maksimal 4 dadu di tangan.
 
 ### Belum dikerjakan
 
 | Area | Catatan |
 | --- | --- |
-| Kode Core | Belum ada turn state machine dan event bus. Ular masih langsung diterapkan (pilihan lawan/turun menunggu sistem duel). Dadu Kompas dan Kembar belum dibuat (butuh input pemain dan riwayat giliran) |
-| asmdef | `Data`, `View`, `App`, `Editor` belum dibuat. Platform asmdef test masih Any Platform, sebaiknya Editor saja |
-| Unit test | `PlayMode` masih kosong |
-| Data ScriptableObject | `Data/{Dice,Enemies,Floors,Relics,Rivals,Tiles}` kosong |
-| Scene | Baru `SampleScene` bawaan template; belum ada scene Board/Menu |
-| Audio | `Audio/{SFX,Music,Mixers}` kosong (F-13) |
-| Art yang masih kurang | Relic baru 7 dari 15 (F-08); sprite boss/duel/rival masih portrait saja, belum ada background zona Katakomba & Puncak Menara |
+| Scene Unity | Jalankan **Roll & Ruin → Build Game Scene**, lalu cek di Play mode. Panduan: [SETUP - Scene Unity.md](SETUP%20-%20Scene%20Unity.md) |
+| Playtest | Belum dimainkan di Editor/HP; perlu cek tampilan, ukuran teks, dan alur panel |
+| F-12 Tutorial | Belum ada (M5) |
+| F-13 Audio | `Audio/` masih kosong (M5) |
+| F-14 Analytics | Belum ada; event di §10 bisa dipasang dari `GameEventBus` |
+| Main menu | Game langsung masuk ke run; menu utama dan layar pilih karakter masuk M5 |
+| Data ScriptableObject | Katalog dadu/relic/musuh masih di kode (`DiceFactory`, `RelicCatalog`, `EnemyCatalog`). Kalau mau tuning tanpa compile ulang, pindahkan ke ScriptableObject di `Data/` |
+| PlayMode test | Masih kosong |
+| Art | Sprite relic baru 7 dari 15; belum ada sprite pintu boss khusus (sementara pakai `wall_brick`) |
 
-### Catatan & temuan
+### Catatan setup yang masih terbuka
 
-- **Script hilang dari disk.** File `RollAndRuin.*.csproj` (dibuat Unity jam 15:40–15:43) masih mereferensikan `GameBootstrap.cs`, `RunRng.cs`, `RunState.cs`, `DiceModel.cs`, `BoardModel.cs`, `BoardGenerator.cs`, `BoardValidator.cs`, `FloorConfig.cs`, `TurnStateMachine.cs`, `GameEventBus.cs`, `GameEvents.cs`, `IRelicEffect.cs`, `RivalBrain.cs`, 4 definisi Data, dan 5 asmdef. Tapi file-file itu nggak ada di disk dan nggak pernah masuk commit. *Update: `RunRng` dan sistem dadu sudah ditulis ulang; sisanya (Board, Turn, Events, Rival, Data) akan dibuat sesuai roadmap.*
-- **Branch `feature/run-rng-dice-model`** belum punya commit sendiri (masih sama dengan `main`).
-- **Folder `Docs/`** belum di-commit.
-- **Player settings masih default template:** `productName` = "RougeLike UlarTangga", `companyName` = "DefaultCompany", package name Android = `com.UnityTechnologies.com.unity.template.urpblank`. Perlu diganti (misalnya `com.<nama>.rollandruin`) sebelum build pertama, karena package name nggak bisa diubah setelah upload ke Play Console.
-- **Package yang mungkin nggak perlu:** `com.unity.ai.navigation`, `com.unity.visualscripting`, `com.unity.collab-proxy`. Bisa dibuang biar build lebih kecil (§9: AAB < 100 MB).
-- **Sisa template:** `Assets/TutorialInfo`, `Assets/Readme.asset`, `Assets/Scenes/SampleScene` bisa dihapus setelah scene sendiri ada.
+- **Player settings masih default template:** `productName` = "RougeLike UlarTangga", `companyName` = "DefaultCompany", package Android = `com.UnityTechnologies.com.unity.template.urpblank`. Ganti sebelum build pertama (package name tidak bisa diubah setelah upload ke Play Console).
+- **Asmdef test** masih Any Platform; lebih rapi kalau Editor saja.
+- **Package yang mungkin tidak perlu:** `com.unity.ai.navigation`, `com.unity.visualscripting`, `com.unity.collab-proxy`.
+- **Sisa template:** `Assets/TutorialInfo`, `Assets/Readme.asset`, `Assets/Scenes/SampleScene` bisa dihapus setelah scene Game dicek.
 
-### Langkah berikutnya (sisa M1)
+### Langkah berikutnya (M5)
 
-1. ~~Buat asmdef Core (`noEngineReferences`) + asmdef test EditMode.~~ ✅
-2. ~~`RunRng` (seed deterministik, state bisa disimpan) dan `DiceModel` + unit test.~~ ✅ Tinggal commit + merge branch `feature/run-rng-dice-model`.
-3. ~~`BoardModel` papan statis 30 petak + ular/tangga~~ ✅ (branch `feature/board-model`), lalu `TurnStateMachine` dasar.
-4. Scene Board: render papan pakai sprite pack, pion jalan dengan dadu biasa (kriteria M1).
-5. Ganti package name & product name, lalu commit `Docs/`.
+1. Bangun scene lewat menu Editor, main satu run penuh di Play mode, catat yang terasa janggal.
+2. Ganti package name & product name, build APK pertama, coba di HP.
+3. Tutorial singkat, audio (SFX dadu dulu), juice animasi.
+4. Main menu + pengaturan, analytics, lalu persiapan closed testing.
