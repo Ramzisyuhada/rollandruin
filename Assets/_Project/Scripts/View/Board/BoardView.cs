@@ -66,6 +66,12 @@ namespace RollAndRuin.View
         public Vector2 Extents =>
             BoardLayout.BoardExtents(Board != null ? Board.Size : BoardModel.DefaultSize, tileSize, columns);
 
+        /// <summary>Petak yang ikonnya disembunyikan (misalnya jebakan yang belum ketahuan).</summary>
+        public Func<int, bool> IsHidden { get; set; }
+
+        /// <summary>Petak yang diberi tanda bahaya permanen (jebakan yang dipasang untuk rival).</summary>
+        public Func<int, bool> IsMarked { get; set; }
+
         /// <summary>Bangun ulang seluruh tampilan papan.</summary>
         public void Build(BoardModel board)
         {
@@ -130,6 +136,13 @@ namespace RollAndRuin.View
                 sr.transform.localPosition = pos;
             }
 
+            if (IsMarked != null && IsMarked(index) && dangerSprite != null)
+            {
+                var mark = CreateSprite("Mark " + index, _tilesRoot, dangerSprite, IconOrder);
+                mark.transform.localPosition = pos;
+            }
+
+            if (IsHidden != null && IsHidden(index)) return;
             var icon = FindIcon(Board.GetTile(index));
             if (icon != null)
             {

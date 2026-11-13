@@ -123,6 +123,7 @@ namespace RollAndRuin.Core
         private void AfterPlayerMove()
         {
             if (State.IsOver) return;
+            CheckClash();
 
             if (Player.Position == Board.BossDoorTile)
             {

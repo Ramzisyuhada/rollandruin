@@ -15,18 +15,38 @@ namespace RollAndRuin.View
         [SerializeField] private Text infoText;
         [SerializeField] private Button rollButton;
         [SerializeField] private Text rollLabel;
+        [SerializeField] private Button sabotageButton;
+        [SerializeField] private Text sabotageLabel;
+        [SerializeField] private Button menuButton;
 
         public event Action RollClicked;
+        public event Action SabotageClicked;
+        public event Action MenuClicked;
 
         private void Awake()
         {
             if (rollButton != null) rollButton.onClick.AddListener(() => RollClicked?.Invoke());
+            if (sabotageButton != null) sabotageButton.onClick.AddListener(() => SabotageClicked?.Invoke());
+            if (menuButton != null) menuButton.onClick.AddListener(() => MenuClicked?.Invoke());
         }
 
         public void Bind(Text hp, Text gold, Text floor, Text message, Text info, Button roll, Text rollText)
         {
             hpText = hp; goldText = gold; floorText = floor; messageText = message; infoText = info;
             rollButton = roll; rollLabel = rollText;
+        }
+
+        public void BindExtras(Button sabotage, Text sabotageText, Button menu)
+        {
+            sabotageButton = sabotage; sabotageLabel = sabotageText; menuButton = menu;
+        }
+
+        public void SetSabotage(bool visible, bool interactable, string label)
+        {
+            if (sabotageButton == null) return;
+            sabotageButton.gameObject.SetActive(visible);
+            sabotageButton.interactable = interactable;
+            if (sabotageLabel != null) sabotageLabel.text = label;
         }
 
         public void SetStats(Actor player, int floorIndex, int turn)
