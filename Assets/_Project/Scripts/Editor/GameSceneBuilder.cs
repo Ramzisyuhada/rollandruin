@@ -252,8 +252,15 @@ namespace RollAndRuin.EditorTools
             rrt.offsetMin = rrt.offsetMax = Vector2.zero;
             rollLabel.color = new Color(0.25f, 0.15f, 0.05f);
 
+            // Tombol kecil kiri (sabotase) dan kanan (menu) di samping tombol lempar.
+            var sabotage = UiFactory.CreateButton("SabotageButton", bottom.transform, woodButton, "Sabotase", 28, out var sabotageLabel);
+            SetCorner((RectTransform)sabotage.transform, 0.03f, 0.19f);
+            var menu = UiFactory.CreateButton("MenuButton", bottom.transform, woodButton, "Menu", 28, out _);
+            SetCorner((RectTransform)menu.transform, 0.81f, 0.97f);
+
             var hud = canvasGo.AddComponent<HudView>();
             hud.Bind(hp, gold, floor, message, info, roll, rollLabel);
+            hud.BindExtras(sabotage, sabotageLabel, menu);
             EditorUtility.SetDirty(hud);
 
             var choices = CreateChoicePanel(root, panelSprite, woodButton);
@@ -324,6 +331,13 @@ namespace RollAndRuin.EditorTools
             EditorUtility.SetDirty(view);
             dim.gameObject.SetActive(false);
             return view;
+        }
+
+        private static void SetCorner(RectTransform rt, float fromX, float toX)
+        {
+            rt.anchorMin = new Vector2(fromX, 0.05f);
+            rt.anchorMax = new Vector2(toX, 0.31f);
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
         }
 
         private static void SetHorizontalSlice(RectTransform rt, float from, float to, float padding)

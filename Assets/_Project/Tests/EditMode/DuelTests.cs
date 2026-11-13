@@ -136,7 +136,7 @@ namespace RollAndRuin.Core.Tests
 
             var round = machine.DuelRoll(0);
 
-            Assert.AreEqual(Math.Min(9 - round.EnemyValue, enemyHp), round.DamageToEnemy);
+            Assert.AreEqual(Math.Min(9 - round.EnemyValue + TurnStateMachine.PlayerHitBonus, enemyHp), round.DamageToEnemy);
             Assert.AreEqual(0, round.DamageToPlayer);
         }
 

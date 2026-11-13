@@ -51,7 +51,10 @@ namespace RollAndRuin.App
             Subscribe(_machine.Events);
             diceHand.DieClicked += OnDieClicked;
             hud.RollClicked += OnRollClicked;
+            hud.SabotageClicked += OnSabotageClicked;
             animations.Idle += OnAnimationsIdle;
+            boardView.IsHidden = IsTileHidden;
+            boardView.IsMarked = t => _machine.State.ArmedTraps.Contains(t);
 
             hud.ShowMessage("Pilih dadu, lalu tap lagi untuk melempar.");
             _machine.Start();
@@ -61,18 +64,73 @@ namespace RollAndRuin.App
         private TurnStateMachine CreateMachine()
         {
             int runSeed = seed != 0 ? seed : Environment.TickCount;
-            var player = new Actor(Actor.PlayerId, DiceFactory.CreateStartingHand(), playerMaxHp);
-            var provider = new BoardGenerator();
-            var rng = new RunRng(runSeed);
-            var state = new RunState(runSeed, player, provider.CreateBoard(0, rng));
-            state.Rng.State = rng.State; // lanjutkan urutan acak setelah papan lantai 1 dibuat
-            return new TurnStateMachine(state, null, provider);
+            return RunFactory.NewRun(runSeed);
+        }
+
+        // ── Jebakan tersembunyi & sabotase ───────────────────────────────────
+
+        /// <summary>Petak terjauh yang sudah dilewati pemain di lantai ini.</summary>
+        private int _furthest;
+
+        /// <summary>Jebakan tersembunyi sampai dilewati, kecuali dalam jangkauan Peta Kusam.</summary>
+        private bool IsTileHidden(int tile)
+        {
+            if (_machine == null || _machine.Board.GetTile(tile) != TileType.Trap) return false;
+            if (_machine.State.ArmedTraps.Contains(tile)) return false;
+            int visibleUntil = Math.Max(_furthest, _machine.Player.Position + _machine.RevealRange);
+            return tile > visibleUntil;
+        }
+
+        private void OnSabotageClicked()
+        {
+            if (!CanAct() || _machine.Phase != TurnPhase.ChooseDice) return;
+            var traps = _machine.ArmableTraps().FindAll(t => !IsTileHidden(t));
+            var snakes = new List<Jump>();
+            foreach (var jump in _machine.Board.Jumps)
+                if (jump.IsSnake && _machine.SnakeMoveTargets(jump.From).Count > 0) snakes.Add(jump);
+
+            var state = _machine.State;
+            choices.Show("Sabotase Varga", "Jebakan menghentikan Varga yang lewat (2 giliran). " +
+                                           "Seruling memindahkan kepala ular ke depan Varga.", new ChoiceOption[]
+            {
+                new ChoiceOption($"Pasang jebakan ({state.TrapCharges})", traps.Count > 0),
+                new ChoiceOption($"Pindah ular ({state.SnakeCharms})", snakes.Count > 0),
+                "Batal",
+            }, choice =>
+            {
+                if (choice == 0) PickTile("Pasang jebakan di mana?", traps, _machine.ArmTrap);
+                else if (choice == 1) PickSnake(snakes);
+            });
+        }
+
+        private void PickSnake(List<Jump> snakes)
+        {
+            var labels = snakes.ConvertAll(s => (ChoiceOption)$"Ular petak {s.From + 1} → {s.To + 1}");
+            labels.Add("Batal");
+            choices.Show("Ular mana?", "Pilih ular yang mau dipindah.", labels, choice =>
+            {
+                if (choice >= snakes.Count) return;
+                int from = snakes[choice].From;
+                PickTile("Kepala ular ke petak mana?", _machine.SnakeMoveTargets(from), t => _machine.MoveSnake(from, t));
+            });
+        }
+
+        private void PickTile(string title, List<int> tiles, Action<int> apply)
+        {
+            var labels = tiles.ConvertAll(t => (ChoiceOption)$"Petak {t + 1}");
+            labels.Add("Batal");
+            choices.Show(title, $"Varga sekarang di petak {_machine.Rival.Position + 1}.", labels, choice =>
+            {
+                if (choice < tiles.Count) apply(tiles[choice]);
+                RefreshUi();
+            });
         }
 
         private void OnDestroy()
         {
             if (diceHand != null) diceHand.DieClicked -= OnDieClicked;
             if (hud != null) hud.RollClicked -= OnRollClicked;
+            if (hud != null) hud.SabotageClicked -= OnSabotageClicked;
             if (animations != null) animations.Idle -= OnAnimationsIdle;
         }
 
@@ -87,7 +145,22 @@ namespace RollAndRuin.App
                 animations.Enqueue(() => hud.ShowMessage($"{who}: {e.Value}"));
                 animations.Wait(0.25f);
             });
-            events.Subscribe<PawnMoved>(e => animations.Enqueue(PawnOf(e.Actor).Walk(e.To)));
+            events.Subscribe<PawnMoved>(e =>
+            {
+                animations.Enqueue(PawnOf(e.Actor).Walk(e.To));
+                if (e.Actor.IsRival) return;
+                int reached = e.To;
+                animations.Enqueue(() =>
+                {
+                    _furthest = Math.Max(_furthest, reached);
+                    boardView.RefreshTiles();
+                });
+            });
+            events.Subscribe<RivalClash>(e => animations.Enqueue(() => hud.ShowMessage(
+                e.Tie ? $"Bertemu Varga! {e.PlayerValue} vs {e.RivalValue}: seri."
+                      : e.PlayerWon ? $"Bertemu Varga! {e.PlayerValue} vs {e.RivalValue}: kamu mencuri {e.GoldStolen} gold."
+                                    : $"Bertemu Varga! {e.PlayerValue} vs {e.RivalValue}: Varga mencuri {e.GoldStolen} gold.")));
+            events.Subscribe<RivalSkipped>(_ => animations.Enqueue(() => hud.ShowMessage("Varga masih terjerat jebakan.")));
             events.Subscribe<LadderClimbed>(e =>
             {
                 int target = Mathf.Clamp(e.Target, 0, _machine.Board.BossDoorTile);
@@ -143,6 +216,7 @@ namespace RollAndRuin.App
 
         private void ShowFloor(FloorStarted e)
         {
+            _furthest = _machine.Player.Position;
             boardView.Build(e.Board);
             playerPawn.Init(boardView, _machine.Player.Position);
             if (rivalPawn != null)
@@ -241,7 +315,8 @@ namespace RollAndRuin.App
                 targets.Add(move.Landed);
                 if (move.HasJump && move.Jump.IsSnake) danger.Add(move.Landed);
                 var tile = _machine.Board.GetTile(move.Landed);
-                if (tile == TileType.Trap || tile == TileType.Enemy || tile == TileType.Curse) danger.Add(move.Landed);
+                bool visibleTrap = tile == TileType.Trap && !IsTileHidden(move.Landed);
+                if (visibleTrap || tile == TileType.Enemy || tile == TileType.Curse) danger.Add(move.Landed);
             }
             boardView.ShowPreview(targets, danger);
             hud.ShowMessage($"{die.Id.ToUpperInvariant()} dipilih. Tap lagi untuk melempar.");
@@ -289,6 +364,9 @@ namespace RollAndRuin.App
             Func<int, bool> usable = inDuel ? (Func<int, bool>)_machine.CanDuelRoll : _machine.CanChooseDie;
             diceHand.Refresh(_machine.Player.Hand, inDuel ? -1 : _selected, canAct, usable);
             hud.SetRoll(canAct && !inDuel && _selected >= 0);
+            var state = _machine.State;
+            bool hasSabotage = _machine.Rival != null && state.TrapCharges + state.SnakeCharms > 0;
+            hud.SetSabotage(hasSabotage, canAct && !inDuel, $"Sabotase\n{state.TrapCharges + state.SnakeCharms}");
             hud.ShowInfo(BuildInfo());
         }
 
@@ -304,9 +382,23 @@ namespace RollAndRuin.App
                        $"Dadu musuh berikut: {FacesOf(next)} · tap dadumu untuk melempar{ability}";
             }
 
-            if (_machine.State.Relics.Count == 0) return string.Empty;
-            var names = _machine.State.Relics.ConvertAll(r => r.Name);
-            return "Relic: " + string.Join(", ", names);
+            var lines = new List<string>();
+            var rival = _machine.Rival;
+            if (rival != null)
+            {
+                string status;
+                if (_machine.State.RivalReachedBossFirst) status = "menunggu di pintu boss";
+                else if (rival.StunTurns > 0) status = $"terjerat {rival.StunTurns} giliran";
+                else
+                {
+                    int predicted = RivalBrain.PredictDie(rival, _machine.Board, _machine.State.RivalPersonality);
+                    status = predicted >= 0 ? "kemungkinan pakai " + rival.Hand.Dice[predicted].Id : "-";
+                }
+                lines.Add($"Varga ({_machine.State.RivalPersonality}) petak {rival.Position + 1}/{_machine.Board.Size} · {status}");
+            }
+            if (_machine.State.Relics.Count > 0)
+                lines.Add("Relic: " + string.Join(", ", _machine.State.Relics.ConvertAll(r => r.Name)));
+            return string.Join("\n", lines);
         }
 
         private static string FacesOf(DiceModel die)

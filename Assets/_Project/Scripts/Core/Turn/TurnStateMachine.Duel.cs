@@ -5,6 +5,12 @@ namespace RollAndRuin.Core
     // Duel dadu (GDD §4.5) melawan monster, ular, dan boss.
     public sealed partial class TurnStateMachine
     {
+        /// <summary>
+        /// Damage tambahan saat pemain menang lemparan. Pemain bisa memilih dadu dan melihat dadu musuh,
+        /// tapi tanpa bonus ini duel boss terlalu simetris (hasil balancing simulasi 300 run).
+        /// </summary>
+        public const int PlayerHitBonus = 1;
+
         private Action<bool> _onDuelEnd;
 
         /// <summary>Duel terakhir yang selesai (untuk ditampilkan View setelah duel ditutup).</summary>
@@ -44,7 +50,7 @@ namespace RollAndRuin.Core
             int diff = Math.Abs(playerValue - enemyValue);
             if (playerValue > enemyValue)
             {
-                round.DamageToEnemy = enemy.Damage(diff);
+                round.DamageToEnemy = enemy.Damage(diff + PlayerHitBonus);
             }
             else if (enemyValue > playerValue)
             {
