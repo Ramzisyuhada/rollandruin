@@ -55,13 +55,16 @@ namespace RollAndRuin.Core
             foreach (var relic in State.Relics) relic.Attach(this);
         }
 
+        /// <summary>True kalau run ini dibangun ulang dari save.</summary>
+        public bool IsResumed { get; internal set; }
+
         /// <summary>Mulai (atau lanjutkan) run. Dipanggil setelah View subscribe ke event.</summary>
         public void Start()
         {
             if (_started) throw new InvalidOperationException("TurnStateMachine sudah dimulai.");
             _started = true;
             Phase = State.IsOver ? TurnPhase.RunOver : TurnPhase.ChooseDice;
-            Events.Publish(new FloorStarted(State.FloorIndex, Board));
+            Events.Publish(new FloorStarted(State.FloorIndex, Board, IsResumed));
             Events.Publish(new TurnStarted(Player, State.TurnNumber));
         }
 

@@ -35,7 +35,7 @@ namespace RollAndRuin.Core
         {
             if (Machine != null) throw new InvalidOperationException($"Relic '{Id}' sudah terpasang.");
             Machine = machine ?? throw new ArgumentNullException(nameof(machine));
-            On<FloorStarted>(_ => OnFloorStart());
+            On<FloorStarted>(e => { if (!e.Resumed) OnFloorStart(); });
             OnAttach();
         }
 
