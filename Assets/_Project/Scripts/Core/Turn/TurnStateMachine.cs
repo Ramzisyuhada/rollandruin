@@ -336,6 +336,7 @@ namespace RollAndRuin.Core
             State.Board = BoardProvider.CreateBoard(State.FloorIndex, State.Rng);
             State.RivalReachedBossFirst = false;
             State.ArmedTraps.Clear();
+            State.Shops.Clear();
             Player.Position = 0;
             Player.Hand.ResetAll();
             if (Rival != null)
