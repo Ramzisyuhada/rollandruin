@@ -62,8 +62,10 @@ namespace RollAndRuin.App
         {
             int runSeed = seed != 0 ? seed : Environment.TickCount;
             var player = new Actor(Actor.PlayerId, DiceFactory.CreateStartingHand(), playerMaxHp);
-            var provider = new PresetBoardProvider();
-            var state = new RunState(runSeed, player, provider.CreateBoard(0, null));
+            var provider = new BoardGenerator();
+            var rng = new RunRng(runSeed);
+            var state = new RunState(runSeed, player, provider.CreateBoard(0, rng));
+            state.Rng.State = rng.State; // lanjutkan urutan acak setelah papan lantai 1 dibuat
             return new TurnStateMachine(state, null, provider);
         }
 
