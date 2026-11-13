@@ -39,10 +39,9 @@ namespace RollAndRuin.View
             root = panelRoot; titleText = title; bodyText = body; optionsContainer = options; buttonSprite = button;
         }
 
-        private void Awake()
-        {
-            if (root != null) root.SetActive(false);
-        }
+        // Sengaja tidak menyembunyikan panel di Awake: kalau komponen ini ada di GameObject yang awalnya
+        // nonaktif, Awake baru jalan saat Show() mengaktifkannya, lalu langsung menyembunyikannya lagi.
+        // Panel diset nonaktif oleh scene builder.
 
         public void Show(string title, string body, IList<ChoiceOption> options, Action<int> onChoose)
         {
