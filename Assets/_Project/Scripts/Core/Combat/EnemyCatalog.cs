@@ -66,8 +66,8 @@ namespace RollAndRuin.Core
                         new[] { Dice("kobra_a", 1, 2, 3, 4, 5, 6), Dice("kobra_b", 2, 3, 3, 4, 4, 5) },
                         25, BossAbility.SnakeBite);
                 case 1:
-                    return new EnemyModel(NagaTangga, "Naga Tangga", EnemyKind.Boss, 10,
-                        new[] { Dice("naga", 2, 3, 4, 4, 5, 6) }, 30, BossAbility.StealDie);
+                    return new EnemyModel(NagaTangga, "Naga Tangga", EnemyKind.Boss, 9,
+                        new[] { Dice("naga", 1, 2, 3, 4, 5, 6), Dice("naga_b", 2, 3, 3, 4, 5, 6) }, 30, BossAbility.StealDie);
                 default:
                     return new EnemyModel(Ouroboros, "Ouroboros", EnemyKind.Boss, 12,
                         new[] { Dice("ouro_a", 1, 2, 3, 4, 5, 6), Dice("ouro_b", 3, 3, 4, 4, 5, 5) },

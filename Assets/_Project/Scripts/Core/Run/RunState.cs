@@ -62,6 +62,9 @@ namespace RollAndRuin.Core
 
         public RunStats Stats { get; } = new RunStats();
 
+        /// <summary>Isi toko per petak di lantai ini (dibuat saat pertama didatangi).</summary>
+        public Dictionary<int, List<ShopItem>> Shops { get; } = new Dictionary<int, List<ShopItem>>();
+
         public RunResult Result { get; set; } = RunResult.Ongoing;
         public string EndCause { get; set; }
 
