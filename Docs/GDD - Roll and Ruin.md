@@ -157,7 +157,7 @@ Seorang petualang rival (nama kerja: *Varga si Pemburu Harta*) memanjat menara y
 - **Logika terpisah dari view:** simulasi game jalan tanpa MonoBehaviour, jadi bisa di-unit test dan dipakai validator papan.
 - **Rival AI:** `RivalBrain` mensimulasikan tiap pilihan dadu di atas model papan yang sama, memberi skor, lalu memilih dengan bobot kepribadian. Karena logikanya tanpa MonoBehaviour, AI ini bisa di-unit test dan diadu ribuan kali buat balancing.
 - **Save/load run:** serialisasi state run ke JSON setiap akhir giliran (penting buat mobile, app bisa ditutup kapan saja).
-- **RNG deterministik:** satu `System.Random` per run dari seed.
+- **RNG deterministik:** satu `RunRng` (SplitMix64) per run dari seed. Dipilih ketimbang `System.Random` karena state-nya satu `ulong` yang bisa disimpan ke save.
 - **Analytics (opsional):** event `run_start`, `run_end`, `floor_reached`, `relic_picked`.
 
 ## 8. UI/UX

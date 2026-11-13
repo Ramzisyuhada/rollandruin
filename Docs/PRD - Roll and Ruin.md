@@ -243,14 +243,18 @@ Di sisi pemain, ular tangga adalah game yang semua orang kenal tapi murni untung
 | Sprite pack v0.1 | Petak (4 lantai, dinding, rim highlight/bahaya/rival), dadu 5 warna × sisi 0–6, pion pemain & rival, ular hijau/emas/beracun (head/body/tail), tangga batu/tali/tali lapuk + Lift Kurcaci, ikon petak (chest, jebakan, api unggun, toko, event, kutukan, obor), 4 musuh, 7 relic, UI (koin, HP, Sisik, panel & tombol 9-slice) |
 | Extras art | Portrait 3 boss + Varga (biasa & berbingkai), app icon 512/192 + adaptive icon Android, 28 animasi frame-by-frame dengan preview GIF |
 | Player settings | Min SDK API 26 (sesuai §9), versi 0.1.0, orientasi portrait |
+| Asmdef | `RollAndRuin.Core` (`noEngineReferences`) dan `RollAndRuin.Core.Tests` (EditMode, NUnit) |
+| `RunRng` | RNG deterministik SplitMix64, state `ulong` bisa disimpan/dipulihkan (siap untuk FR-11). Menggantikan rencana `System.Random` di GDD §7 |
+| Dadu (Core) | `DiceFace`, `DiceModel` (roll, cooldown, ganti sisi), `DiceHand` (1 dadu per giliran, cooldown, jaminan minimal 1 dadu siap/FR-06), `DiceFactory` (Biasa, Aman, Nekat, Genap; tangan awal 3 Dadu Biasa) |
+| Unit test | 39 test EditMode (RunRng, DiceModel, DiceHand), semua lulus |
 
 ### Belum dikerjakan
 
 | Area | Catatan |
 | --- | --- |
-| Kode Core | Folder `Scripts/` masih kosong (lihat catatan di bawah). Belum ada `RunRng`, `DiceModel`, `BoardModel`, turn state machine, event bus |
-| asmdef | Belum ada di disk; target: `RollAndRuin.Core` (`noEngineReferences`), `Data`, `View`, `App`, `Editor`, plus asmdef test |
-| Unit test | `Tests/EditMode` dan `PlayMode` kosong |
+| Kode Core | Belum ada `BoardModel`, turn state machine, event bus. Dadu Kompas dan Kembar belum dibuat (butuh input pemain dan riwayat giliran) |
+| asmdef | `Data`, `View`, `App`, `Editor` belum dibuat. Platform asmdef test masih Any Platform, sebaiknya Editor saja |
+| Unit test | `PlayMode` masih kosong |
 | Data ScriptableObject | `Data/{Dice,Enemies,Floors,Relics,Rivals,Tiles}` kosong |
 | Scene | Baru `SampleScene` bawaan template; belum ada scene Board/Menu |
 | Audio | `Audio/{SFX,Music,Mixers}` kosong (F-13) |
@@ -258,7 +262,7 @@ Di sisi pemain, ular tangga adalah game yang semua orang kenal tapi murni untung
 
 ### Catatan & temuan
 
-- **Script hilang dari disk.** File `RollAndRuin.*.csproj` (dibuat Unity jam 15:40–15:43) masih mereferensikan `GameBootstrap.cs`, `RunRng.cs`, `RunState.cs`, `DiceModel.cs`, `BoardModel.cs`, `BoardGenerator.cs`, `BoardValidator.cs`, `FloorConfig.cs`, `TurnStateMachine.cs`, `GameEventBus.cs`, `GameEvents.cs`, `IRelicEffect.cs`, `RivalBrain.cs`, 4 definisi Data, dan 5 asmdef. Tapi file-file itu nggak ada di disk dan nggak pernah masuk commit. Kalau masih dibutuhkan, cek Recycle Bin atau history IDE (Rider/VS Local History); kalau sengaja dihapus, abaikan.
+- **Script hilang dari disk.** File `RollAndRuin.*.csproj` (dibuat Unity jam 15:40–15:43) masih mereferensikan `GameBootstrap.cs`, `RunRng.cs`, `RunState.cs`, `DiceModel.cs`, `BoardModel.cs`, `BoardGenerator.cs`, `BoardValidator.cs`, `FloorConfig.cs`, `TurnStateMachine.cs`, `GameEventBus.cs`, `GameEvents.cs`, `IRelicEffect.cs`, `RivalBrain.cs`, 4 definisi Data, dan 5 asmdef. Tapi file-file itu nggak ada di disk dan nggak pernah masuk commit. *Update: `RunRng` dan sistem dadu sudah ditulis ulang; sisanya (Board, Turn, Events, Rival, Data) akan dibuat sesuai roadmap.*
 - **Branch `feature/run-rng-dice-model`** belum punya commit sendiri (masih sama dengan `main`).
 - **Folder `Docs/`** belum di-commit.
 - **Player settings masih default template:** `productName` = "RougeLike UlarTangga", `companyName` = "DefaultCompany", package name Android = `com.UnityTechnologies.com.unity.template.urpblank`. Perlu diganti (misalnya `com.<nama>.rollandruin`) sebelum build pertama, karena package name nggak bisa diubah setelah upload ke Play Console.
@@ -267,8 +271,8 @@ Di sisi pemain, ular tangga adalah game yang semua orang kenal tapi murni untung
 
 ### Langkah berikutnya (sisa M1)
 
-1. Buat asmdef Core (`noEngineReferences`) + asmdef test EditMode.
-2. `RunRng` (seed deterministik, state bisa disimpan) dan `DiceModel` + unit test, sesuai nama branch aktif.
+1. ~~Buat asmdef Core (`noEngineReferences`) + asmdef test EditMode.~~ ✅
+2. ~~`RunRng` (seed deterministik, state bisa disimpan) dan `DiceModel` + unit test.~~ ✅ Tinggal commit + merge branch `feature/run-rng-dice-model`.
 3. `BoardModel` papan statis 30 petak + ular/tangga, dan `TurnStateMachine` dasar.
 4. Scene Board: render papan pakai sprite pack, pion jalan dengan dadu biasa (kriteria M1).
 5. Ganti package name & product name, lalu commit `Docs/`.
