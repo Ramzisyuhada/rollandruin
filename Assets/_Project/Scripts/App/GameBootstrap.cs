@@ -46,17 +46,43 @@ namespace RollAndRuin.App
 
         private void Start()
         {
-            _machine = CreateMachine();
-
-            Subscribe(_machine.Events);
             diceHand.DieClicked += OnDieClicked;
             hud.RollClicked += OnRollClicked;
             hud.SabotageClicked += OnSabotageClicked;
             animations.Idle += OnAnimationsIdle;
             boardView.IsHidden = IsTileHidden;
-            boardView.IsMarked = t => _machine.State.ArmedTraps.Contains(t);
+            boardView.IsMarked = t => _machine != null && _machine.State.ArmedTraps.Contains(t);
 
-            hud.ShowMessage("Pilih dadu, lalu tap lagi untuk melempar.");
+            // FR-12: tawarkan melanjutkan run yang tersimpan.
+            var saved = SaveService.HasRun ? SaveService.LoadRun() : null;
+            if (saved == null)
+            {
+                BeginRun(CreateMachine());
+                return;
+            }
+
+            choices.Show("Lanjutkan run?",
+                $"Ada run tersimpan: lantai {saved.State.FloorIndex + 1}, giliran {saved.State.TurnNumber}, " +
+                $"HP {saved.Player.Hp}/{saved.Player.MaxHp}.",
+                new ChoiceOption[] { "Lanjutkan", "Run baru" }, choice =>
+                {
+                    if (choice == 0)
+                    {
+                        BeginRun(saved);
+                    }
+                    else
+                    {
+                        SaveService.DeleteRun();
+                        BeginRun(CreateMachine());
+                    }
+                });
+        }
+
+        private void BeginRun(TurnStateMachine machine)
+        {
+            _machine = machine;
+            Subscribe(_machine.Events);
+            hud.ShowMessage(_machine.IsResumed ? "Run dilanjutkan." : "Pilih dadu, lalu tap lagi untuk melempar.");
             _machine.Start();
             RefreshUi();
         }
@@ -66,6 +92,28 @@ namespace RollAndRuin.App
             int runSeed = seed != 0 ? seed : Environment.TickCount;
             return RunFactory.NewRun(runSeed);
         }
+
+        // ── Save otomatis (FR-11) ────────────────────────────────────────────
+
+        private void SaveIfPossible()
+        {
+            if (_machine == null || _machine.State.IsOver) return;
+            try
+            {
+                SaveService.SaveRun(_machine);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[Roll & Ruin] Gagal menyimpan run: {e.Message}");
+            }
+        }
+
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused) SaveIfPossible();
+        }
+
+        private void OnApplicationQuit() => SaveIfPossible();
 
         // ── Jebakan tersembunyi & sabotase ───────────────────────────────────
 
@@ -207,7 +255,13 @@ namespace RollAndRuin.App
                 animations.Wait(0.4f);
             });
             events.Subscribe<FloorCompleted>(e => animations.Enqueue(() => hud.ShowMessage($"Lantai {e.FloorIndex + 1} selesai!")));
-            events.Subscribe<RunEnded>(e => animations.Enqueue(() => ShowRunEnded(e)));
+            events.Subscribe<RunEnded>(e =>
+            {
+                SaveService.DeleteRun();
+                animations.Enqueue(() => ShowRunEnded(e));
+            });
+            // Save tiap awal giliran pemain: state Core sudah konsisten walau animasi belum selesai.
+            events.Subscribe<TurnStarted>(e => { if (!e.Actor.IsRival) SaveIfPossible(); });
         }
 
         private PawnView PawnOf(Actor actor) => actor != null && actor.IsRival && rivalPawn != null ? rivalPawn : playerPawn;

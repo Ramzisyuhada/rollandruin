@@ -163,7 +163,14 @@ namespace RollAndRuin.Core
     {
         public int FloorIndex { get; }
         public BoardModel Board { get; }
-        public FloorStarted(int floorIndex, BoardModel board) { FloorIndex = floorIndex; Board = board; }
+
+        /// <summary>True kalau lantai ini dilanjutkan dari save: efek "awal lantai" tidak boleh terpicu lagi.</summary>
+        public bool Resumed { get; }
+
+        public FloorStarted(int floorIndex, BoardModel board, bool resumed = false)
+        {
+            FloorIndex = floorIndex; Board = board; Resumed = resumed;
+        }
     }
 
     public sealed class FloorCompleted
