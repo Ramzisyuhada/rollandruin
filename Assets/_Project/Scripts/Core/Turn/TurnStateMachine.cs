@@ -33,6 +33,37 @@ namespace RollAndRuin.Core
         {
             State = state ?? throw new ArgumentNullException(nameof(state));
             Events = events ?? new GameEventBus();
+
+            // Relic yang sudah ada (misalnya dari save) dipasang ulang tanpa efek "saat didapat".
+            foreach (var relic in State.Relics) relic.Attach(this);
+        }
+
+        // ── Relic ────────────────────────────────────────────────────────────
+
+        public bool HasRelic(string id) => State.Relics.Exists(r => r.Id == id);
+
+        /// <summary>Jumlah petak di depan yang isinya diperlihatkan (relic Peta Kusam).</summary>
+        public int RevealRange
+        {
+            get
+            {
+                int range = 0;
+                foreach (var relic in State.Relics) range = Math.Max(range, relic.RevealTiles);
+                return range;
+            }
+        }
+
+        public RelicBase AddRelic(string id) => AddRelic(RelicCatalog.Create(id));
+
+        public RelicBase AddRelic(RelicBase relic)
+        {
+            if (relic == null) throw new ArgumentNullException(nameof(relic));
+            if (HasRelic(relic.Id)) throw new InvalidOperationException($"Relic '{relic.Id}' sudah dimiliki.");
+            State.Relics.Add(relic);
+            relic.Attach(this);
+            relic.OnAcquired();
+            Events.Publish(new RelicAdded(relic));
+            return relic;
         }
 
         /// <summary>Mulai lantai. Dipanggil setelah View subscribe ke event.</summary>
@@ -177,6 +208,16 @@ namespace RollAndRuin.Core
             int healed = actor.Heal(incoming.Amount);
             if (healed > 0) Events.Publish(new HpChanged(actor, healed, source));
             return healed;
+        }
+
+        /// <summary>Beri racun (bisa dibatalkan relic). Racun tidak menumpuk; ambil yang terlama.</summary>
+        public int ApplyPoison(Actor actor, int turns)
+        {
+            if (actor == null) throw new ArgumentNullException(nameof(actor));
+            var applying = Events.Publish(new PoisonApplying(actor, turns));
+            if (applying.Turns <= 0) return 0;
+            actor.PoisonTurns = Math.Max(actor.PoisonTurns, applying.Turns);
+            return applying.Turns;
         }
 
         public int GiveGold(Actor actor, int amount, string source)

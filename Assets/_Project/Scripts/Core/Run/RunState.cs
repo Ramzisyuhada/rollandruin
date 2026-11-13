@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace RollAndRuin.Core
 {
@@ -23,6 +24,9 @@ namespace RollAndRuin.Core
         public BoardModel Board { get; set; }
         public int FloorIndex { get; set; }
         public int TurnNumber { get; set; } = 1;
+
+        /// <summary>Relic yang dimiliki pemain, urut sesuai waktu didapat.</summary>
+        public List<RelicBase> Relics { get; } = new List<RelicBase>();
 
         public RunResult Result { get; set; } = RunResult.Ongoing;
         public string EndCause { get; set; }

@@ -105,6 +105,60 @@ namespace RollAndRuin.Core
         public ExtraTurnGranted(Actor actor) { Actor = actor; }
     }
 
+    /// <summary>Hook: Turns boleh diubah relic (Penawar Racun → 0).</summary>
+    public sealed class PoisonApplying
+    {
+        public Actor Actor { get; }
+        public int Turns { get; set; }
+        public PoisonApplying(Actor actor, int turns) { Actor = actor; Turns = turns; }
+    }
+
+    /// <summary>Hook Lift Kurcaci: relic boleh mengubah biaya atau melarang pemakaian.</summary>
+    public sealed class LiftRequested
+    {
+        public Actor Actor { get; }
+        public Jump Jump { get; }
+        public int Cost { get; set; }
+        public bool Allowed { get; set; } = true;
+        public LiftRequested(Actor actor, Jump jump, int cost) { Actor = actor; Jump = jump; Cost = cost; }
+    }
+
+    public sealed class TrapTriggered
+    {
+        public Actor Actor { get; }
+        public int Tile { get; }
+        public bool ArmedByPlayer { get; }
+        public TrapTriggered(Actor actor, int tile, bool armedByPlayer) { Actor = actor; Tile = tile; ArmedByPlayer = armedByPlayer; }
+    }
+
+    /// <summary>Hook: lemparan dalam duel. Value boleh diubah relic (Mata Elang +1).</summary>
+    public sealed class DuelRolled
+    {
+        public Actor Actor { get; }
+        public bool IsEnemy { get; }
+        public int Value { get; set; }
+        public DuelRolled(Actor actor, bool isEnemy, int value) { Actor = actor; IsEnemy = isEnemy; Value = value; }
+    }
+
+    public sealed class DuelEnded
+    {
+        public Actor Actor { get; }
+        public string EnemyId { get; }
+        public bool PlayerWon { get; }
+        public bool AgainstSnake { get; }
+        public bool AgainstBoss { get; }
+        public DuelEnded(Actor actor, string enemyId, bool playerWon, bool againstSnake, bool againstBoss)
+        {
+            Actor = actor; EnemyId = enemyId; PlayerWon = playerWon; AgainstSnake = againstSnake; AgainstBoss = againstBoss;
+        }
+    }
+
+    public sealed class RelicAdded
+    {
+        public RelicBase Relic { get; }
+        public RelicAdded(RelicBase relic) { Relic = relic; }
+    }
+
     public sealed class FloorStarted
     {
         public int FloorIndex { get; }
