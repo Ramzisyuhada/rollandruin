@@ -246,13 +246,14 @@ Di sisi pemain, ular tangga adalah game yang semua orang kenal tapi murni untung
 | Asmdef | `RollAndRuin.Core` (`noEngineReferences`) dan `RollAndRuin.Core.Tests` (EditMode, NUnit) |
 | `RunRng` | RNG deterministik SplitMix64, state `ulong` bisa disimpan/dipulihkan (siap untuk FR-11). Menggantikan rencana `System.Random` di GDD §7 |
 | Dadu (Core) | `DiceFace`, `DiceModel` (roll, cooldown, ganti sisi), `DiceHand` (1 dadu per giliran, cooldown, jaminan minimal 1 dadu siap/FR-06), `DiceFactory` (Biasa, Aman, Nekat, Genap; tangan awal 3 Dadu Biasa) |
-| Unit test | 39 test EditMode (RunRng, DiceModel, DiceHand), semua lulus |
+| Papan (Core) | `TileType`, `Jump`/`JumpKind` (ular & tangga + varian GDD), `BoardModel` (30 petak, validasi FR-03), `MoveResolver` (gerak + FR-07, hasil lengkap untuk animasi), `BoardPresets.CreateTestFloor()` (papan statis M1 dengan toko & api unggun, FR-04) |
+| Unit test | 76 test EditMode (RunRng, DiceModel, DiceHand, Jump, BoardModel, MoveResolver), semua lulus |
 
 ### Belum dikerjakan
 
 | Area | Catatan |
 | --- | --- |
-| Kode Core | Belum ada `BoardModel`, turn state machine, event bus. Dadu Kompas dan Kembar belum dibuat (butuh input pemain dan riwayat giliran) |
+| Kode Core | Belum ada turn state machine dan event bus. Ular masih langsung diterapkan (pilihan lawan/turun menunggu sistem duel). Dadu Kompas dan Kembar belum dibuat (butuh input pemain dan riwayat giliran) |
 | asmdef | `Data`, `View`, `App`, `Editor` belum dibuat. Platform asmdef test masih Any Platform, sebaiknya Editor saja |
 | Unit test | `PlayMode` masih kosong |
 | Data ScriptableObject | `Data/{Dice,Enemies,Floors,Relics,Rivals,Tiles}` kosong |
@@ -273,6 +274,6 @@ Di sisi pemain, ular tangga adalah game yang semua orang kenal tapi murni untung
 
 1. ~~Buat asmdef Core (`noEngineReferences`) + asmdef test EditMode.~~ ✅
 2. ~~`RunRng` (seed deterministik, state bisa disimpan) dan `DiceModel` + unit test.~~ ✅ Tinggal commit + merge branch `feature/run-rng-dice-model`.
-3. `BoardModel` papan statis 30 petak + ular/tangga, dan `TurnStateMachine` dasar.
+3. ~~`BoardModel` papan statis 30 petak + ular/tangga~~ ✅ (branch `feature/board-model`), lalu `TurnStateMachine` dasar.
 4. Scene Board: render papan pakai sprite pack, pion jalan dengan dadu biasa (kriteria M1).
 5. Ganti package name & product name, lalu commit `Docs/`.
